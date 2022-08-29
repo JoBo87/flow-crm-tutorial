@@ -1,6 +1,7 @@
 package com.example.application.views.list;
 
 import com.example.application.data.entity.Contact;
+import com.example.application.data.service.CrmService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.textfield.TextField;
@@ -12,25 +13,50 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 
-import java.awt.*;
+import java.util.Collections;
 
 @PageTitle("Contacts")
 @Route(value = "")
 public class ListView extends VerticalLayout {
     Grid<Contact> grid = new Grid<>(Contact.class);
     TextField filterText = new TextField();
+    ContactForm form;
+    CrmService service;
 
 
-    public ListView() {
+    public ListView(CrmService service) {
+        this.service = service;
         addClassName("list-view");
         setSizeFull();
 
         configureGrid();
+        configureForm();
 
         add(
-          getToolbar(),
-           grid
+                getToolbar(),
+                getContent()
         );
+
+        updateList();
+    }
+
+    private void updateList() {
+        grid.setItems(service.findAllContacts(filterText.getValue()));
+    }
+
+    private Component getContent() {
+        HorizontalLayout content = new HorizontalLayout(grid, form);
+        content.setFlexGrow(2, grid);
+        content.setFlexGrow(1, form);
+        content.addClassName("content");
+        content.setSizeFull();
+
+        return content;
+    }
+
+    private void configureForm() {
+        form = new ContactForm(service.findAllCompanies(), service.findAllStatuses());
+        form.setWidth("25em");
     }
 
     private Component getToolbar() {
@@ -38,6 +64,7 @@ public class ListView extends VerticalLayout {
         filterText.setPlaceholder("filter by name...");
         filterText.setClearButtonVisible(true);
         filterText.setValueChangeMode(ValueChangeMode.LAZY);
+        filterText.addValueChangeListener(e -> updateList());
 
         Button addContactButton = new Button("Add contact");
 
